@@ -92,8 +92,8 @@
   <div class="header">
     <h1>Take-home pay comparison: Contractor vs Employee</h1>
     <div class="header-row2">
-      <p class="sub">Tax year 2025/26 (England/Wales/NI rates). Compare a day-rate contract via your own Ltd company,
-         via an umbrella, and a permanent PAYE salary. All figures are <b>net monthly</b> take-home.</p>
+      <p class="sub"> Compare a day-rate contract via your own Ltd company, via an umbrella, and a permanent PAYE salary.
+	<br>Tax year 2025/26 (England/Wales/NI rates). All figures are <b>net monthly</b> take-home. </p>
       <div class="seg tabs" id="tabs">
         <button data-t="chart" class="active">📈 Chart</button>
         <button data-t="calc">🧮 Calculator</button>
@@ -162,14 +162,17 @@
       <details class="opt-exp">
         <summary>What are these?</summary>
         <p class="optbox-note">These are operating setup choices that affect how the company is
-          structured and taxed — not standard assumptions for every Ltd company. <b>Second salary:</b>
+          structured and taxed - not standard assumptions for every Ltd company. 
+		
+			<br><b>Second salary:</b>
           paying a second director or employee is always a company cost (it reduces the profit available
           as dividends). If they earn at least £5,000 the company qualifies for the £10,500 Employment
           Allowance, which offsets employer NI on both salaries. Use the toggle to set who they are:
           <b>include</b> a spouse/partner (their net pay is added to household take-home, using a second
           personal allowance), or <b>exclude</b> an arm's-length employee (the cost still applies, but
-          their pay isn't your income). <b>Expenses:</b> costs the company meets on your behalf that you
-          would otherwise pay personally from net pay — e.g. phone, home office, professional
+          their pay isn't your income). 
+			<br><b>Expenses:</b> costs the company meets on your behalf that you
+          would otherwise pay personally from net pay e.g. phone, home office, professional
           subscriptions.</p>
       </details>
     </div>
@@ -235,29 +238,13 @@
       person with no other income, no pension contributions and no student loan. Rates are 2025/26 and do not include
       Scottish income tax bands.</p>
 
-      <h3>What the x-axis means — and the multiplier (k)</h3>
+      <h3>What the x-axis means</h3>
       <ul>
         <li><b>Bottom axis</b> = <i>gross annual salary £</i>. This is the master scale.</li>
-        <li><b>Top axis</b> = <i>day rate</i>, but each day rate is positioned at its <b>salary-equivalent</b>, not a
-            literal ×days conversion. The salary-equivalent = <code>day rate × billable days × k</code>, where <b>k</b> is a
-            single structural multiplier.</li>
-        <li><b>Why k exists:</b> a £500/day contract and a £110k salary are <i>not</i> the same offer — they're taxed very
-            differently. Lining them up 1:1 (the old behaviour) understated how a day rate maps to a salary. Instead, k is
-            chosen by <b>least-squares so the Ltd Outside IR35 line overlaps the permanent-salary line</b>: this slides the
-            day-rate ruler so reading "£500/day ≈ £130k salary" reflects equivalent take-home, not equivalent gross.</li>
-        <li><b>Auto-fit</b> recomputes k by least-squares whenever you change household view, billable days or expenses —
-            drag the slider to override it manually. Because the household toggle is so influential, the fit lands around
-            k ≈ <b>×1.06</b> with household <i>on</i> but ≈ <b>×0.91</b> with it <i>off</i> (where your personal Ltd net
-            actually trails an equivalent salary). The live value is shown next to the slider.</li>
-        <li><b>The curves cross — so no single k overlaps them end-to-end.</b> Through the mid-range the Ltd Outside route
-            carries a premium, but above roughly <b>£800–£900/day</b> it reverses: at additional-rate level, £1 of profit
-            taken as dividends nets ~45p (25% corporation tax then 39.35% dividend tax) versus ~53p for salary (45% + 2% NI).
-            On top of that the 60% allowance taper (£100k–£125,140), the NI band at £50,270 and corp-tax marginal relief bend
-            the lines. Least-squares therefore picks a mid-range compromise. If you want the <b>£400–£600/day band</b> to sit
-            exactly on the salary line (the most common comparison point), nudge the slider to about <b>×1.18</b>. It is a
-            deliberately rough, single-number equivalence — read it as such.</li>
+        <li><b>Top axis</b> = <i>day rate</i>, but each day rate is positioned at its rough <b>salary-equivalent</b> for take-home pay, not a literal ×days conversion. The exact take-home varies based on tax treatment. </li>
+        <li><b>Auto-fit</b> matches this scaling to make the two axes overlap as closely as possible (least-squares method) whenever you change parameters. Drag the slider to override it manually. </li>
         <li>Only <b>Ltd Outside IR35</b> is fitted to overlap salary. Umbrella and Inside IR35 shift by the same k, so they
-            sit <i>below</i> the salary line — correctly showing they're worth less than the equivalent permanent job.</li>
+            sit <i>below</i> the salary line - correctly showing they're worth less than the equivalent permanent job. You can adjust the slider manually if you need to compare one of them more directly to a salary, or use the tab at the top of the page for an exact calculation.</li>
       </ul>
 
       <h3>Ltd company — Outside IR35</h3>
