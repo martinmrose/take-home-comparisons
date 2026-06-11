@@ -1,0 +1,786 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>UK Take-Home Pay Comparison — 2025/26</title>
+<style>
+  :root{
+    --bg:#0f1419; --panel:#1a212b; --panel2:#232c38; --ink:#e8edf2;
+    --muted:#93a1b0; --grid:#2c3744; --axis:#5a6b7d;
+    --salary:#5ab1ff; --umbrella:#ffb454; --ltdOut:#5fd38a; --ltdIn:#c98bff;
+    --accent:#5ab1ff;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  .wrap{max-width:1080px;margin:0 auto;padding:28px 22px 80px}
+  h1{font-size:24px;margin:0 0 4px}
+  .sub{color:var(--muted);margin:0 0 22px;font-size:14px}
+  .card{background:var(--panel);border:1px solid #283341;border-radius:12px;padding:18px 20px;margin-bottom:18px}
+  .controls{display:flex;flex-wrap:wrap;gap:22px 30px;align-items:flex-end}
+  .ctl{display:flex;flex-direction:column;gap:6px}
+  .ctl label{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+  .seg{display:inline-flex;border:1px solid #36424f;border-radius:8px;overflow:hidden}
+  .seg button{background:transparent;color:var(--muted);border:0;padding:8px 14px;cursor:pointer;font-size:14px}
+  .seg button.active{background:var(--accent);color:#0b1117;font-weight:600}
+  input[type=number]{background:var(--panel2);border:1px solid #36424f;color:var(--ink);
+    border-radius:8px;padding:8px 10px;width:110px;font-size:14px}
+  .switch{display:flex;align-items:center;gap:9px;cursor:pointer;user-select:none}
+  .switch input{display:none}
+  .track{width:42px;height:24px;border-radius:13px;background:#36424f;position:relative;transition:.15s}
+  .track::after{content:"";position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.15s}
+  .switch input:checked + .track{background:var(--ltdOut)}
+  .switch input:checked + .track::after{transform:translateX(18px)}
+  .chartbox{position:relative}
+  svg{width:100%;height:auto;display:block}
+  .legend{display:flex;flex-wrap:wrap;gap:18px;margin-top:10px;padding-left:8px}
+  .lg{display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13.5px}
+  .lg .sw{width:22px;height:4px;border-radius:2px}
+  .lg.off{opacity:.38;text-decoration:line-through}
+  #tip{position:absolute;pointer-events:none;background:#0b1117ee;border:1px solid #36424f;
+    border-radius:9px;padding:10px 12px;font-size:13px;min-width:210px;opacity:0;transition:opacity .08s;z-index:5}
+  #tip .th{font-weight:600;margin-bottom:6px;border-bottom:1px solid #2c3744;padding-bottom:5px}
+  #tip .row{display:flex;justify-content:space-between;gap:14px;padding:2px 0}
+  #tip .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px}
+  #tip .v{font-variant-numeric:tabular-nums;font-weight:600}
+  details{margin-top:6px}
+  summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:14px}
+  .meth{color:#c3cdd8;font-size:13.5px}
+  .meth h3{color:var(--ink);font-size:14px;margin:16px 0 6px}
+  .meth ul{margin:6px 0;padding-left:20px}
+  .meth code{background:var(--panel2);padding:1px 5px;border-radius:4px}
+  table.rates{border-collapse:collapse;font-size:13px;margin:8px 0}
+  table.rates td,table.rates th{border:1px solid #2c3744;padding:5px 10px;text-align:left}
+  .warn{color:#ffb454}
+  .foot{color:var(--muted);font-size:12.5px;margin-top:26px;line-height:1.6}
+  .tabs{margin-bottom:18px}
+  .calcHead{font-size:15.5px;font-weight:600;margin-bottom:12px}
+  table.calc{width:100%;font-size:13.5px;border-collapse:collapse}
+  table.calc td,table.calc th{border:1px solid #2c3744;padding:9px 13px;text-align:left}
+  table.calc th{color:var(--muted);font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em}
+  table.calc .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:8px;vertical-align:middle}
+  .calcNote{color:#c3cdd8;font-size:13.5px;margin-top:14px;line-height:1.55}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>UK Monthly Take-Home Pay — by income level &amp; working arrangement</h1>
+  <p class="sub">Tax year 2025/26 (England/Wales/NI rates). Compare a day-rate contract via your own Ltd company,
+     via an umbrella, and a permanent PAYE salary. All figures are <b>net monthly</b> take-home.</p>
+
+  <div class="seg tabs" id="tabs">
+    <button data-t="chart" class="active">📈 Chart</button>
+    <button data-t="calc">🧮 Equivalence calculator</button>
+  </div>
+
+  <div id="tab-chart">
+  <div class="card">
+    <div class="controls">
+      <div class="ctl">
+        <label>Ltd company — IR35 status</label>
+        <div class="seg" id="ir35">
+          <button data-v="outside" class="active">Outside IR35</button>
+          <button data-v="inside">Inside IR35</button>
+          <button data-v="both">Show both</button>
+        </div>
+      </div>
+      <div class="ctl">
+        <label>Household view</label>
+        <label class="switch"><input type="checkbox" id="household"><span class="track"></span>
+          <span style="font-size:13.5px;color:var(--ink)">Count 2nd director's £12,570</span></label>
+      </div>
+      <div class="ctl">
+        <label>Billable days / yr</label>
+        <input type="number" id="days" value="220" min="100" max="260" step="1">
+      </div>
+      <div class="ctl">
+        <label>Umbrella margin £/wk</label>
+        <input type="number" id="margin" value="25" min="0" max="100" step="1">
+      </div>
+      <div class="ctl">
+        <label>Ltd expenses £/yr</label>
+        <input type="number" id="expenses" value="5000" min="0" max="20000" step="500">
+      </div>
+      <div class="ctl">
+        <label>Day-rate range shown (£/day)</label>
+        <div style="display:flex;align-items:center;gap:8px">
+          <input type="number" id="drMin" value="200" min="20" max="1990" step="10" style="width:84px">
+          <span style="color:var(--muted)">to</span>
+          <input type="number" id="drMax" value="1000" min="30" max="2000" step="10" style="width:84px">
+        </div>
+      </div>
+      <div class="ctl" style="min-width:250px">
+        <label>Day-rate ↔ salary multiplier (k)</label>
+        <div style="display:flex;align-items:center;gap:12px">
+          <label class="switch" title="Auto-fit k so Ltd Outside IR35 overlaps the permanent salary line">
+            <input type="checkbox" id="autofit" checked><span class="track"></span>
+            <span style="font-size:13px;color:var(--ink)">Auto-fit</span></label>
+          <input type="range" id="kSlider" min="0.80" max="1.30" step="0.01" value="1.18" style="width:150px">
+        </div>
+        <div id="kRead" style="font-size:12.5px;color:var(--ltdOut);font-weight:600"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="chartbox" id="chartbox">
+      <svg id="chart" viewBox="0 0 960 560" preserveAspectRatio="xMidYMid meet"></svg>
+      <div id="tip"></div>
+    </div>
+    <div class="legend" id="legend"></div>
+  </div>
+  </div><!-- /tab-chart -->
+
+  <div id="tab-calc" style="display:none">
+    <div class="card">
+      <p style="margin-top:0;color:var(--muted)">Find the <b>exact</b> take-home for a single income point and the precise
+         day-rate ⇄ salary figure that matches it. This inverts the real tax maths — no multiplier or approximation.</p>
+      <div class="controls">
+        <div class="ctl">
+          <label>I have a…</label>
+          <div class="seg" id="cBasis">
+            <button data-v="day" class="active">Day rate</button>
+            <button data-v="salary">Annual salary</button>
+          </div>
+        </div>
+        <div class="ctl">
+          <label id="cValLabel">Day rate (£)</label>
+          <input type="number" id="cValue" value="500" min="0" step="10">
+        </div>
+        <div class="ctl">
+          <label>Billable days / yr</label>
+          <input type="number" id="cDays" value="220" min="100" max="260">
+        </div>
+        <div class="ctl">
+          <label>Household view</label>
+          <label class="switch"><input type="checkbox" id="cHousehold"><span class="track"></span>
+            <span style="font-size:13.5px;color:var(--ink)">Count 2nd director £12,570</span></label>
+        </div>
+        <div class="ctl">
+          <label>Umbrella margin £/wk</label>
+          <input type="number" id="cMargin" value="25" min="0" max="100">
+        </div>
+        <div class="ctl">
+          <label>Ltd expenses £/yr</label>
+          <input type="number" id="cExpenses" value="5000" min="0" step="500">
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div id="calcOut"></div>
+    </div>
+  </div>
+
+  <div class="card meth">
+    <details>
+      <summary>Assumptions &amp; methodology — read this before trusting a number</summary>
+      <p style="margin-top:14px">This is a planning tool, not tax advice. It models the headline mechanics for a single
+      person with no other income, no pension contributions and no student loan. Rates are 2025/26 and do not include
+      Scottish income tax bands.</p>
+
+      <h3>What the x-axis means — and the multiplier (k)</h3>
+      <ul>
+        <li><b>Bottom axis</b> = <i>gross annual salary £</i>. This is the master scale.</li>
+        <li><b>Top axis</b> = <i>day rate</i>, but each day rate is positioned at its <b>salary-equivalent</b>, not a
+            literal ×days conversion. The salary-equivalent = <code>day rate × billable days × k</code>, where <b>k</b> is a
+            single structural multiplier.</li>
+        <li><b>Why k exists:</b> a £500/day contract and a £110k salary are <i>not</i> the same offer — they're taxed very
+            differently. Lining them up 1:1 (the old behaviour) understated how a day rate maps to a salary. Instead, k is
+            chosen by <b>least-squares so the Ltd Outside IR35 line overlaps the permanent-salary line</b>: this slides the
+            day-rate ruler so reading "£500/day ≈ £130k salary" reflects equivalent take-home, not equivalent gross.</li>
+        <li><b>Auto-fit</b> recomputes k by least-squares whenever you change household view, billable days or expenses —
+            drag the slider to override it manually. Because the household toggle is so influential, the fit lands around
+            k ≈ <b>×1.06</b> with household <i>on</i> but ≈ <b>×0.91</b> with it <i>off</i> (where your personal Ltd net
+            actually trails an equivalent salary). The live value is shown next to the slider.</li>
+        <li><b>The curves cross — so no single k overlaps them end-to-end.</b> Through the mid-range the Ltd Outside route
+            carries a premium, but above roughly <b>£800–£900/day</b> it reverses: at additional-rate level, £1 of profit
+            taken as dividends nets ~45p (25% corporation tax then 39.35% dividend tax) versus ~53p for salary (45% + 2% NI).
+            On top of that the 60% allowance taper (£100k–£125,140), the NI band at £50,270 and corp-tax marginal relief bend
+            the lines. Least-squares therefore picks a mid-range compromise. If you want the <b>£400–£600/day band</b> to sit
+            exactly on the salary line (the most common comparison point), nudge the slider to about <b>×1.18</b>. It is a
+            deliberately rough, single-number equivalence — read it as such.</li>
+        <li>Only <b>Ltd Outside IR35</b> is fitted to overlap salary. Umbrella and Inside IR35 shift by the same k, so they
+            sit <i>below</i> the salary line — correctly showing they're worth less than the equivalent permanent job.</li>
+      </ul>
+
+      <h3>Ltd company — Outside IR35</h3>
+      <ul>
+        <li>You take a director's salary of <b>£12,570</b> (tax-free, no employee NI).</li>
+        <li>A <b>second director is paid £12,570</b> for admin work. This makes the company eligible for the
+            <b>Employment Allowance (£10,500)</b>, which fully covers the employer NI on both salaries — so employer NI = £0.</li>
+        <li><b>£5,000 of expenses</b> (editable) you would otherwise pay personally are met by the company. These are added
+            <i>directly</i> to your after-tax income (you neither pay tax on them nor fund them from net pay).</li>
+        <li>Remaining profit is taxed at <b>corporation tax</b> (19% up to £50k, 25% above £250k, marginal relief between)
+            and the rest distributed to you as <b>dividends</b> (£500 allowance, then 8.75% / 33.75% / 39.35%).</li>
+        <li><b>Household view OFF (default):</b> only your personal net is plotted (salary + net dividends + expenses).
+            <b>ON:</b> adds the second director's £12,570 (the income-splitting case).</li>
+      </ul>
+
+      <h3>Ltd company — Inside IR35</h3>
+      <ul>
+        <li>Modelled as an off-payroll <b>deemed employment payment</b>: the fee-payer deducts employer NI (15% above £5,000)
+            and the 0.5% apprenticeship levy from the contract value before paying your deemed gross salary, which is then
+            taxed as employment income (income tax + employee NI).</li>
+        <li><b>No</b> dividends, <b>no</b> £5k expenses and <b>no</b> Employment Allowance apply. The result is essentially
+            umbrella economics <i>without</i> the umbrella margin — so it sits just above the umbrella line.</li>
+      </ul>
+
+      <h3>Umbrella (PAYE)</h3>
+      <ul>
+        <li>The assignment rate (contract value) first loses the umbrella's <b>margin</b> (£/week × weeks worked).</li>
+        <li>From the remainder, <b>employer NI (15% above £5,000)</b> and the <b>0.5% apprenticeship levy</b> are removed to
+            leave your gross PAYE salary: <code>gross = (pot + £750) / 1.155</code>.</li>
+        <li>That gross is taxed as employment income (income tax + employee NI). No Employment Allowance (umbrellas can't
+            apply it per worker).</li>
+      </ul>
+
+      <h3>Permanent PAYE salary</h3>
+      <ul>
+        <li>Gross salary taxed with income tax + employee NI. Personal allowance tapers £1 for every £2 over £100,000.</li>
+      </ul>
+
+      <h3>Key 2025/26 figures used</h3>
+      <table class="rates">
+        <tr><th>Item</th><th>Value</th></tr>
+        <tr><td>Personal allowance</td><td>£12,570 (taper £100k–£125,140)</td></tr>
+        <tr><td>Income tax bands</td><td>20% to £50,270 · 40% to £125,140 · 45% above</td></tr>
+        <tr><td>Employee NI</td><td>8% £12,570–£50,270 · 2% above</td></tr>
+        <tr><td>Employer NI</td><td>15% above £5,000 secondary threshold</td></tr>
+        <tr><td>Employment Allowance</td><td>£10,500 (Outside IR35 Ltd only)</td></tr>
+        <tr><td>Apprenticeship levy</td><td>0.5% (umbrella &amp; inside IR35)</td></tr>
+        <tr><td>Dividend allowance / rates</td><td>£500 · 8.75% / 33.75% / 39.35%</td></tr>
+        <tr><td>Corporation tax</td><td>19% / 25% with marginal relief (3/200)</td></tr>
+      </table>
+      <p class="warn">⚠ Edge cases: below ~£200/day the contracting structures break down, so those lines start at £200/day.
+         Marginal-relief and PA-taper interactions are modelled but always sanity-check a specific figure with an accountant.</p>
+    </details>
+  </div>
+
+  <p class="foot">Self-contained — no internet required. Open this file in any browser. Adjust the controls above and the
+     chart recalculates instantly. Built for planning/comparison only; not financial or tax advice.</p>
+</div>
+
+<!--
+  TAX RATES — 2025/26 (England/Wales/NI)
+  =======================================
+  To update for a new tax year, edit ONLY the values in this JSON block.
+  The calculation logic in the <script> below reads from it at load time.
+
+  Key fields to check each April after the Budget:
+    PA                  Personal allowance
+    PA_TAPER_START      Income at which PA starts being withdrawn (£2 withdrawn per £1 over)
+    BASIC_BAND          Width of the 20% band (NOT the upper threshold — that's PA + BASIC_BAND = £50,270)
+    ADDL_THRESHOLD      Total income at which additional rate (45%) starts
+    NI_PT / NI_UEL      Employee NI lower / upper earnings limits
+    NI_MAIN / NI_UPPER  Employee NI rates below/above UEL
+    ER_ST / ER_RATE     Employer NI secondary threshold and rate
+    EA                  Employment Allowance (claimed by the Ltd company; covers employer NI on both directors)
+    LEVY                Apprenticeship levy rate (applies to umbrella and inside-IR35 routes)
+    DIV_ALLOW           Annual dividend allowance (taxed at 0%)
+    DIV_BASIC/HIGHER/ADDL  Dividend tax rates in each band
+    CT_SMALL / CT_MAIN  Corporation tax rates for profits ≤CT_LOWER / ≥CT_UPPER
+    CT_LOWER / CT_UPPER Profit thresholds for small/main corp tax rate
+    MR                  Marginal relief fraction (3/200 = 0.015) used between CT_LOWER and CT_UPPER
+    DIRECTOR_SALARY     Optimal director salary (= PA, so no income tax; NI covered by EA)
+-->
+<script type="application/json" id="tax-rates">
+{
+  "TAX_YEAR":        "2025/26",
+  "PA":              12570,
+  "PA_TAPER_START":  100000,
+  "BASIC_BAND":      37700,
+  "ADDL_THRESHOLD":  125140,
+  "R_BASIC":         0.20,
+  "R_HIGHER":        0.40,
+  "R_ADDL":          0.45,
+  "NI_PT":           12570,
+  "NI_UEL":          50270,
+  "NI_MAIN":         0.08,
+  "NI_UPPER":        0.02,
+  "ER_ST":           5000,
+  "ER_RATE":         0.15,
+  "LEVY":            0.005,
+  "EA":              10500,
+  "DIV_ALLOW":       500,
+  "DIV_BASIC":       0.0875,
+  "DIV_HIGHER":      0.3375,
+  "DIV_ADDL":        0.3935,
+  "CT_SMALL":        0.19,
+  "CT_MAIN":         0.25,
+  "CT_LOWER":        50000,
+  "CT_UPPER":        250000,
+  "MR":              0.015,
+  "DIRECTOR_SALARY": 12570
+}
+</script>
+
+<script>
+// Load tax rates from the JSON block above — edit that block, not this line.
+const T = JSON.parse(document.getElementById('tax-rates').textContent);
+
+//// ---------- tax helpers ----------
+
+function personalAllowance(total){
+  if(total<=T.PA_TAPER_START) return T.PA;
+  // PA tapers at £1 per £2 of income above £100k, hitting £0 at £125,140.
+  // This creates an effective 60% marginal rate in the taper zone (40% tax + 20% lost allowance).
+  return Math.max(0, T.PA - Math.floor((total-T.PA_TAPER_START)/2));
+}
+
+// Taxes `amount` of income sitting above `start` on the taxable-income stack.
+// Called twice per person: once for salary (starting at 0), once for dividends (starting above salary).
+// `bands` is an array of {top, rate} where `top` is measured from zero in taxable-income terms.
+function bandTax(start, amount, bands){
+  let tax=0, pos=start, left=amount;
+  for(const b of bands){
+    if(left<=0) break;
+    if(pos>=b.top){continue;}
+    const room=b.top-pos;
+    const t=Math.min(left,room);
+    tax+=t*b.rate; pos+=t; left-=t;
+  }
+  return tax;
+}
+
+// Returns band structures for salary income and dividend income separately.
+// higherTop is PA-dependent: when PA is tapered down, the 40% band extends further
+// (because ADDL_THRESHOLD is an absolute income figure, not a taxable-income figure).
+function incomeTaxBands(pa){
+  const higherTop = Math.max(T.BASIC_BAND, T.ADDL_THRESHOLD - pa);
+  return {
+    nonDiv:[{top:T.BASIC_BAND,rate:T.R_BASIC},{top:higherTop,rate:T.R_HIGHER},{top:Infinity,rate:T.R_ADDL}],
+    div:   [{top:T.BASIC_BAND,rate:T.DIV_BASIC},{top:higherTop,rate:T.DIV_HIGHER},{top:Infinity,rate:T.DIV_ADDL}]
+  };
+}
+
+function employeeNI(salary){
+  let ni=0;
+  if(salary>T.NI_PT) ni+=(Math.min(salary,T.NI_UEL)-T.NI_PT)*T.NI_MAIN;
+  if(salary>T.NI_UEL) ni+=(salary-T.NI_UEL)*T.NI_UPPER;
+  return ni;
+}
+function employerNI(salary){ return Math.max(0,salary-T.ER_ST)*T.ER_RATE; }
+
+// Corporation tax with marginal relief between CT_LOWER (£50k) and CT_UPPER (£250k).
+// Formula: CT_MAIN × profit − (CT_UPPER − profit) × MR, where MR = 3/200.
+// This gives a sliding effective rate from 19% at £50k to 25% at £250k.
+function corpTax(profit){
+  if(profit<=0) return 0;
+  if(profit<=T.CT_LOWER) return profit*T.CT_SMALL;
+  if(profit>=T.CT_UPPER) return profit*T.CT_MAIN;
+  return profit*T.CT_MAIN - (T.CT_UPPER-profit)*T.MR;
+}
+
+// Combined income tax on salary + dividends for a single person (no other income).
+// Salary occupies the lower tax bands first; dividends stack on top. The £500 dividend
+// allowance is applied before the dividend rate kicks in. NI is NOT included here —
+// callers add it separately because the rate structure differs (no NI on dividends).
+function personalIncomeTax(salary, dividends){
+  const total=salary+dividends;
+  const pa=personalAllowance(total);
+  const bands=incomeTaxBands(pa);
+  const salaryTaxable=Math.max(0,salary-pa);
+  const taxableTotal=Math.max(0,total-pa);
+  const dividendTaxable=Math.max(0,taxableTotal-salaryTaxable);
+  let tax=bandTax(0,salaryTaxable,bands.nonDiv);
+  const allowance=Math.min(T.DIV_ALLOW,dividendTaxable); // £500 allowance, may be < DIV_ALLOW if dividends are small
+  const divToTax=dividendTaxable-allowance;
+  tax+=bandTax(salaryTaxable+allowance,divToTax,bands.div);
+  return tax;
+}
+
+//// ---------- scenario take-home (annual) ----------
+// All functions return annual net take-home in £.
+
+function netPermanent(gross){
+  return gross - personalIncomeTax(gross,0) - employeeNI(gross);
+}
+
+// Umbrella: the agency pays the umbrella an "assignment rate" (= contract value here).
+// The umbrella deducts its weekly margin, then employer NI and apprenticeship levy before
+// paying you a gross PAYE salary. Solving gross × (1 + ER_RATE + LEVY) − ER_ST×ER_RATE = pot
+// for gross gives the formula below. No Employment Allowance — umbrellas can't claim it per-worker.
+function netUmbrella(contract, weeklyMargin, days){
+  const weeks=days/5;
+  const pot=Math.max(0, contract - weeklyMargin*weeks);
+  const gross=(pot + T.ER_ST*T.ER_RATE)/(1+T.ER_RATE+T.LEVY); // inverted: gross = (pot+750)/1.155
+  return gross - personalIncomeTax(gross,0) - employeeNI(gross);
+}
+
+// Inside IR35: off-payroll working rules. The fee-payer (agency/client) deducts employer NI
+// and apprenticeship levy before paying a deemed salary — same maths as umbrella but no margin.
+// No dividends, no expenses, no Employment Allowance. Sits just above umbrella on the chart.
+function netInsideIR35(contract){
+  const gross=(contract + T.ER_ST*T.ER_RATE)/(1+T.ER_RATE+T.LEVY);
+  return gross - personalIncomeTax(gross,0) - employeeNI(gross);
+}
+
+// Outside IR35: full Ltd company flow.
+//   1. Company pays two directors at DIRECTOR_SALARY (= PA). Employment Allowance (£10,500)
+//      covers the employer NI on both — so erni nets to £0 at these salary levels.
+//   2. Company meets £expenses that the director would otherwise pay personally (e.g. phone,
+//      travel). These are added directly to take-home — no tax, no NI on them.
+//   3. Remaining profit is corporation-taxed; the after-tax profit is paid as dividends.
+//   4. Director pays personal income tax on salary + dividends (no NI on dividends).
+//   5. `household` ON: adds the second director's £12,570 salary. It falls entirely within
+//      their personal allowance, so it's completely tax-free — hence a straight £12,570 addition.
+function netOutsideIR35(contract, expenses, household){
+  const salaries=T.DIRECTOR_SALARY*2;
+  const erni=Math.max(0, employerNI(T.DIRECTOR_SALARY)*2 - T.EA); // EA fully covers this → 0
+  const profitBeforeCT=Math.max(0, contract - salaries - expenses - erni);
+  const ct=corpTax(profitBeforeCT);
+  const dividends=Math.max(0, profitBeforeCT - ct);
+  const salary=T.DIRECTOR_SALARY;
+  const tax=personalIncomeTax(salary,dividends);
+  let net = salary + dividends - tax - employeeNI(salary) + expenses;
+  if(household) net += T.DIRECTOR_SALARY;
+  return net;
+}
+
+//// ---------- series definitions ----------
+const SERIES={
+  salary:  {key:'salary',  label:'Permanent PAYE salary', color:getCol('--salary'),  dayBased:false},
+  umbrella:{key:'umbrella',label:'Umbrella (PAYE)',        color:getCol('--umbrella'),dayBased:true},
+  ltdOut:  {key:'ltdOut',  label:'Ltd — Outside IR35',     color:getCol('--ltdOut'),  dayBased:true},
+  ltdIn:   {key:'ltdIn',   label:'Ltd — Inside IR35',      color:getCol('--ltdIn'),   dayBased:true},
+};
+function getCol(v){return getComputedStyle(document.documentElement).getPropertyValue(v).trim();}
+
+//// ---------- state ----------
+const state={ir35:'outside', household:false, days:220, margin:25, expenses:5000,
+             k:1.18, autoFit:true, hidden:{}, cBasis:'day', cValue:500,
+             drMin:200, drMax:1000};            // selected day-rate range (£/day)
+// x-axis is GROSS SALARY £ (the master scale). The visible window is the salary-equivalent
+// of the selected day-rate range: [drMin·days·k , drMax·days·k]. Contracting routes plot at
+// salary-equivalent position = contractValue * k (structural multiplier).
+function xLo(){ return state.drMin*state.days*state.k; }
+function xHi(){ return state.drMax*state.days*state.k; }
+// "nice" tick step (1/2/5 × 10^n) for an axis spanning `span` with ~count ticks
+function niceStep(span,count){
+  const raw=span/Math.max(1,count), mag=Math.pow(10,Math.floor(Math.log10(raw))), n=raw/mag;
+  return (n<1.5?1:n<3?2:n<7?5:10)*mag;
+}
+
+function activeSeriesKeys(){
+  const out=['salary','umbrella'];
+  if(state.ir35==='outside'||state.ir35==='both') out.push('ltdOut');
+  if(state.ir35==='inside'||state.ir35==='both') out.push('ltdIn');
+  return out;
+}
+// monthly take-home for series `key` at salary-equivalent position `pos` (annual £); null if out of domain
+function posValue(key, pos){
+  if(key==='salary') return netPermanent(pos)/12;
+  const c = pos/state.k;                       // true contract value behind this position
+  if(c < state.drMin*state.days-1 || c > state.drMax*state.days+1) return null;
+  if(key==='umbrella') return netUmbrella(c, state.margin, state.days)/12;
+  if(key==='ltdIn')    return netInsideIR35(c)/12;
+  if(key==='ltdOut')   return netOutsideIR35(c, state.expenses, state.household)/12;
+  return null;
+}
+function buildData(key){
+  const pts=[], lo=xLo(), hi=xHi(), N=160;
+  if(key==='salary'){
+    for(let i=0;i<=N;i++){ const s=lo+(hi-lo)*i/N; pts.push({p:s, y:netPermanent(s)/12}); }
+  } else {
+    const cLo=state.drMin*state.days, cHi=state.drMax*state.days;
+    for(let i=0;i<=N;i++){ const c=cLo+(cHi-cLo)*i/N; pts.push({p:c*state.k, y:posValue(key,c*state.k)}); }
+  }
+  return pts;
+}
+// Finds the k that minimises sum-of-squared differences between netOutsideIR35 and
+// netPermanent(contract × k) over the VISIBLE day-rate range only. This means narrowing
+// the range to e.g. £200–500/day excludes the high-rate crossover (where dividends become
+// less efficient than salary above ~£800/day) and pulls k toward ~1.18 in that band.
+// Full range (£200–1000) yields k ≈ 1.06 because the crossover drags the average down.
+function fitK(){
+  let best=1, bestErr=Infinity;
+  const cLo=state.drMin*state.days, cHi=state.drMax*state.days, step=Math.max(500,(cHi-cLo)/50);
+  for(let k=0.80; k<=1.30; k+=0.005){
+    let sse=0;
+    for(let c=cLo; c<=cHi; c+=step){
+      const diff = netOutsideIR35(c, state.expenses, state.household) - netPermanent(c*k);
+      sse += diff*diff;
+    }
+    if(sse<bestErr){bestErr=sse; best=k;}
+  }
+  return Math.round(best*100)/100;
+}
+
+//// ---------- chart geometry ----------
+const SVGNS="http://www.w3.org/2000/svg";
+const W=960,H=560, M={l:78,r:34,t:64,b:74};
+const PW=W-M.l-M.r, PH=H-M.t-M.b;
+let yMax=0;
+function sx(x){return M.l + (x-xLo())/(xHi()-xLo())*PW;}
+function sy(y){return M.t + PH - (y/yMax)*PH;}
+function fmt(n){return '£'+Math.round(n).toLocaleString('en-GB');}
+function fmtK(n){return '£'+Math.round(n/1000)+'k';}
+
+function el(name,attrs,txt){
+  const e=document.createElementNS(SVGNS,name);
+  for(const k in attrs) e.setAttribute(k,attrs[k]);
+  if(txt!=null) e.textContent=txt;
+  return e;
+}
+
+function render(){
+  // keep the selected day-rate range sane, reflect back to the inputs
+  state.drMin=Math.max(20,Math.round(state.drMin));
+  state.drMax=Math.max(state.drMin+10,Math.round(state.drMax));
+  const drMinEl=document.getElementById('drMin'), drMaxEl=document.getElementById('drMax');
+  if(drMinEl){ drMinEl.value=state.drMin; drMaxEl.value=state.drMax; }
+
+  if(state.autoFit){
+    state.k=fitK();
+    document.getElementById('kSlider').value=state.k;
+  }
+  // multiplier readout — reference the middle of the selected range
+  const refDr=Math.round((state.drMin+state.drMax)/2);
+  const eq=Math.round(refDr*state.days*state.k/1000)*1000;
+  document.getElementById('kRead').textContent='×'+state.k.toFixed(2)+'  —  £'+refDr+'/day ≈ '+fmtK(eq)+' salary';
+
+  const svg=document.getElementById('chart');
+  svg.innerHTML='';
+  const keys=activeSeriesKeys().filter(k=>!state.hidden[k]);
+  const lo=xLo(), hi=xHi();
+
+  // y scale from visible series
+  yMax=0;
+  keys.forEach(k=>buildData(k).forEach(p=>{if(p.y>yMax)yMax=p.y;}));
+  yMax=Math.ceil(yMax/1000)*1000+500; if(yMax<1000)yMax=1000;
+
+  // y gridlines
+  const ySteps=8;
+  for(let i=0;i<=ySteps;i++){
+    const yv=yMax*i/ySteps, py=sy(yv);
+    svg.appendChild(el('line',{x1:M.l,y1:py,x2:M.l+PW,y2:py,stroke:'var(--grid)','stroke-width':1}));
+    svg.appendChild(el('text',{x:M.l-10,y:py+4,fill:'var(--muted)','font-size':12,'text-anchor':'end'},fmt(yv)));
+  }
+  // bottom axis (gross salary £) — nice ticks within the visible window
+  const sStep=niceStep(hi-lo,7);
+  for(let xv=Math.ceil(lo/sStep)*sStep; xv<=hi+1; xv+=sStep){
+    const px=sx(xv);
+    svg.appendChild(el('line',{x1:px,y1:M.t,x2:px,y2:M.t+PH,stroke:'var(--grid)','stroke-width':1,opacity:.5}));
+    svg.appendChild(el('text',{x:px,y:M.t+PH+22,fill:'var(--muted)','font-size':12,'text-anchor':'middle'},fmtK(xv)));
+  }
+  svg.appendChild(el('text',{x:M.l+PW/2,y:H-14,fill:'var(--ink)','font-size':13,'text-anchor':'middle','font-weight':600},
+    'Gross salary £  (day-rate routes positioned at salary-equivalent = day rate × '+state.days+' × k)'));
+  // top axis (day rate, shifted by k) — nice ticks across the selected range
+  const drStep=niceStep(state.drMax-state.drMin,8);
+  for(let dr=Math.ceil(state.drMin/drStep)*drStep; dr<=state.drMax+1; dr+=drStep){
+    const xv=dr*state.days*state.k; if(xv<lo-1||xv>hi+1) continue;
+    const px=sx(xv);
+    svg.appendChild(el('line',{x1:px,y1:M.t,x2:px,y2:M.t-6,stroke:'var(--axis)','stroke-width':1}));
+    svg.appendChild(el('text',{x:px,y:M.t-12,fill:'var(--umbrella)','font-size':11.5,'text-anchor':'middle'},'£'+dr));
+  }
+  svg.appendChild(el('text',{x:M.l+PW/2,y:22,fill:'var(--umbrella)','font-size':12.5,'text-anchor':'middle','font-weight':600},
+    'Day rate  (structural multiplier k = ×'+state.k.toFixed(2)+' applied)'));
+  // left axis title
+  svg.appendChild(el('text',{x:18,y:M.t+PH/2,fill:'var(--ink)','font-size':13,'text-anchor':'middle','font-weight':600,
+    transform:'rotate(-90 18 '+(M.t+PH/2)+')'},'Net monthly take-home'));
+  // frame
+  svg.appendChild(el('line',{x1:M.l,y1:M.t,x2:M.l,y2:M.t+PH,stroke:'var(--axis)','stroke-width':1.5}));
+  svg.appendChild(el('line',{x1:M.l,y1:M.t+PH,x2:M.l+PW,y2:M.t+PH,stroke:'var(--axis)','stroke-width':1.5}));
+
+  // lines
+  keys.forEach(k=>{
+    const d=buildData(k);
+    const path=d.map((p,i)=>(i?'L':'M')+sx(p.p).toFixed(1)+' '+sy(p.y).toFixed(1)).join(' ');
+    svg.appendChild(el('path',{d:path,fill:'none',stroke:SERIES[k].color,'stroke-width':2.6,'stroke-linejoin':'round'}));
+  });
+
+  // crosshair + hover markers
+  svg.appendChild(el('line',{id:'cross',x1:0,y1:M.t,x2:0,y2:M.t+PH,stroke:'#fff','stroke-width':1,opacity:0,'stroke-dasharray':'4 4'}));
+  keys.forEach(k=>svg.appendChild(el('circle',{id:'mk-'+k,r:5,fill:SERIES[k].color,stroke:'#0f1419','stroke-width':2,opacity:0})));
+
+  buildLegend();
+}
+
+function buildLegend(){
+  const lg=document.getElementById('legend'); lg.innerHTML='';
+  activeSeriesKeys().forEach(k=>{
+    const s=SERIES[k];
+    const d=document.createElement('div');
+    d.className='lg'+(state.hidden[k]?' off':'');
+    d.innerHTML='<span class="sw" style="background:'+s.color+'"></span>'+s.label;
+    d.onclick=()=>{state.hidden[k]=!state.hidden[k]; render();};
+    lg.appendChild(d);
+  });
+}
+
+//// ---------- hover ----------
+const tip=document.getElementById('tip');
+document.getElementById('chart').addEventListener('mousemove',e=>{
+  const svg=e.currentTarget, r=svg.getBoundingClientRect(), scale=W/r.width;
+  const px=(e.clientX-r.left)*scale;
+  if(px<M.l||px>M.l+PW){hideHover();return;}
+  const lo=xLo(), hi=xHi();
+  let pos=lo+(px-M.l)/PW*(hi-lo);
+  pos=Math.max(lo,Math.min(hi,pos));
+  const keys=activeSeriesKeys().filter(k=>!state.hidden[k]);
+  const cross=document.getElementById('cross');
+  cross.setAttribute('x1',sx(pos)); cross.setAttribute('x2',sx(pos)); cross.setAttribute('opacity',.5);
+  const rows=[];
+  keys.forEach(k=>{
+    const mk=document.getElementById('mk-'+k);
+    const y=posValue(k,pos);
+    if(y!=null){ mk.setAttribute('cx',sx(pos)); mk.setAttribute('cy',sy(y)); mk.setAttribute('opacity',1); rows.push({k,y}); }
+    else mk.setAttribute('opacity',0);
+  });
+  rows.sort((a,b)=>b.y-a.y);
+  const dr=pos/(state.k*state.days);
+  let html='<div class="th">'+fmt(pos)+' salary-equiv  ·  £'+Math.round(dr)+'/day</div>';
+  rows.forEach(row=>{
+    html+='<div class="row"><span><span class="dot" style="background:'+SERIES[row.k].color+'"></span>'+
+      SERIES[row.k].label+'</span><span class="v">'+fmt(row.y)+'</span></div>';
+  });
+  tip.innerHTML=html; tip.style.opacity=1;
+  const localX=sx(pos)/scale, tw=tip.offsetWidth;
+  let tx=localX+16; if(tx+tw>r.width) tx=localX-tw-16;
+  tip.style.left=Math.max(0,tx)+'px'; tip.style.top=(M.t/scale+10)+'px';
+});
+document.getElementById('chart').addEventListener('mouseleave',hideHover);
+function hideHover(){
+  tip.style.opacity=0;
+  const c=document.getElementById('cross'); if(c)c.setAttribute('opacity',0);
+  activeSeriesKeys().forEach(k=>{const m=document.getElementById('mk-'+k); if(m)m.setAttribute('opacity',0);});
+}
+
+//// ---------- controls ----------
+document.getElementById('ir35').addEventListener('click',e=>{
+  if(e.target.tagName!=='BUTTON')return;
+  [...e.currentTarget.children].forEach(b=>b.classList.remove('active'));
+  e.target.classList.add('active'); state.ir35=e.target.dataset.v; render();
+});
+document.getElementById('household').addEventListener('change',e=>{state.household=e.target.checked;render();});
+document.getElementById('days').addEventListener('input',e=>{state.days=+e.target.value||220;render();});
+document.getElementById('margin').addEventListener('input',e=>{state.margin=+e.target.value||0;render();});
+document.getElementById('expenses').addEventListener('input',e=>{state.expenses=+e.target.value||0;render();});
+document.getElementById('drMin').addEventListener('change',e=>{state.drMin=+e.target.value||20;render();});
+document.getElementById('drMax').addEventListener('change',e=>{state.drMax=+e.target.value||1000;render();});
+document.getElementById('autofit').addEventListener('change',e=>{state.autoFit=e.target.checked;render();});
+document.getElementById('kSlider').addEventListener('input',e=>{
+  state.autoFit=false; document.getElementById('autofit').checked=false;
+  state.k=+e.target.value; render();
+});
+
+//// ---------- equivalence calculator ----------
+// This tab does exact point-to-point equivalence with no multiplier approximation.
+// It inverts the net-pay functions using binary search, which works because all four
+// net functions are monotonically increasing over sensible income ranges — there are
+// no local optima to trap the search in. 70 iterations gives sub-penny precision.
+
+function fmt0(n){return Math.round(n).toLocaleString('en-GB');}
+
+function routeNet(route,c){
+  if(route==='umbrella') return netUmbrella(c,state.margin,state.days);
+  if(route==='ltdIn')    return netInsideIR35(c);
+  if(route==='ltdOut')   return netOutsideIR35(c,state.expenses,state.household);
+  return 0;
+}
+
+// "What gross salary nets the same as this take-home?" — binary search over netPermanent.
+function equivSalaryForNet(target){
+  let lo=0,hi=2000000;
+  for(let i=0;i<70;i++){const m=(lo+hi)/2; if(netPermanent(m)<target)lo=m; else hi=m;}
+  return (lo+hi)/2;
+}
+
+// "What contract value via this route nets the same as the target?" — binary search over routeNet.
+function equivContractForNet(route,target){
+  let lo=0,hi=3000000;
+  for(let i=0;i<70;i++){const m=(lo+hi)/2; if(routeNet(route,m)<target)lo=m; else hi=m;}
+  return (lo+hi)/2;
+}
+const CALC_ROUTES=[['ltdOut','Ltd — Outside IR35'],['umbrella','Umbrella (PAYE)'],['ltdIn','Ltd — Inside IR35']];
+function calcRender(){
+  const out=document.getElementById('calcOut');
+  let html='';
+  if(state.cBasis==='day'){
+    const dr=state.cValue, c=dr*state.days;
+    html+='<div class="calcHead">£'+fmt0(dr)+' / day &nbsp;·&nbsp; contract '+fmt(c)+' / yr &nbsp;·&nbsp; '
+      +state.days+' billable days'+(state.household?' &nbsp;·&nbsp; household view':'')+'</div>';
+    html+='<table class="calc"><tr><th>Route</th><th>Net / month</th><th>Net / year</th>'
+      +'<th>% of contract kept</th><th>Equivalent gross salary</th></tr>';
+    CALC_ROUTES.forEach(([k,label])=>{
+      const net=routeNet(k,c), eq=equivSalaryForNet(net);
+      html+='<tr><td><span class="dot" style="background:'+SERIES[k].color+'"></span>'+label+'</td>'
+        +'<td><b>'+fmt(net/12)+'</b></td><td>'+fmt(net)+'</td><td>'+(net/c*100).toFixed(1)+'%</td>'
+        +'<td><b>£'+fmt0(eq)+'</b></td></tr>';
+    });
+    html+='</table>';
+    const eqOut=equivSalaryForNet(routeNet('ltdOut',c));
+    html+='<p class="calcNote"><b>Equivalent gross salary</b> = the permanent PAYE salary that nets exactly the same '
+      +'take-home. So a <b>£'+fmt0(dr)+'/day</b> contract via Ltd Outside IR35'+(state.household?' (household)':'')
+      +' is worth about a <b>£'+fmt0(eqOut)+'</b> salaried job.</p>';
+  } else {
+    const s=state.cValue, net=netPermanent(s);
+    html+='<div class="calcHead">£'+fmt0(s)+' gross salary</div>';
+    html+='<table class="calc"><tr><th>Permanent PAYE</th><th>Net / month</th><th>Net / year</th><th>% of gross kept</th></tr>'
+      +'<tr><td><span class="dot" style="background:'+SERIES.salary.color+'"></span>This salary nets</td>'
+      +'<td><b>'+fmt(net/12)+'</b></td><td>'+fmt(net)+'</td><td>'+(net/s*100).toFixed(1)+'%</td></tr></table>';
+    html+='<table class="calc" style="margin-top:16px"><tr><th>To match that take-home you would need</th>'
+      +'<th>Day rate</th><th>Contract / yr</th></tr>';
+    CALC_ROUTES.forEach(([k,label])=>{
+      const c=equivContractForNet(k,net);
+      html+='<tr><td><span class="dot" style="background:'+SERIES[k].color+'"></span>'+label
+        +(state.household&&k==='ltdOut'?' (household)':'')+'</td>'
+        +'<td><b>£'+fmt0(c/state.days)+' / day</b></td><td>'+fmt(c)+'</td></tr>';
+    });
+    html+='</table>';
+    html+='<p class="calcNote">Each day rate above is the figure that produces the <i>same net take-home</i> as a £'
+      +fmt0(s)+' salary, after the real tax treatment of that route — no approximation.</p>';
+  }
+  out.innerHTML=html;
+}
+function syncCalcInputs(){
+  document.getElementById('cDays').value=state.days;
+  document.getElementById('cMargin').value=state.margin;
+  document.getElementById('cExpenses').value=state.expenses;
+  document.getElementById('cHousehold').checked=state.household;
+}
+function syncChartInputs(){
+  document.getElementById('days').value=state.days;
+  document.getElementById('margin').value=state.margin;
+  document.getElementById('expenses').value=state.expenses;
+  document.getElementById('household').checked=state.household;
+}
+// tab switching
+document.getElementById('tabs').addEventListener('click',e=>{
+  if(e.target.tagName!=='BUTTON')return;
+  [...e.currentTarget.children].forEach(b=>b.classList.remove('active'));
+  e.target.classList.add('active');
+  const t=e.target.dataset.t;
+  document.getElementById('tab-chart').style.display = t==='chart'?'':'none';
+  document.getElementById('tab-calc').style.display  = t==='calc'?'':'none';
+  if(t==='calc'){ syncCalcInputs(); calcRender(); } else { syncChartInputs(); render(); }
+});
+// calculator controls
+document.getElementById('cBasis').addEventListener('click',e=>{
+  if(e.target.tagName!=='BUTTON')return;
+  [...e.currentTarget.children].forEach(b=>b.classList.remove('active'));
+  e.target.classList.add('active');
+  state.cBasis=e.target.dataset.v;
+  // swap to a sensible default value & label when changing units
+  if(state.cBasis==='salary'){
+    document.getElementById('cValLabel').textContent='Annual gross salary (£)';
+    if(state.cValue<5000){ state.cValue=100000; }
+  } else {
+    document.getElementById('cValLabel').textContent='Day rate (£)';
+    if(state.cValue>5000){ state.cValue=500; }
+  }
+  document.getElementById('cValue').value=state.cValue;
+  calcRender();
+});
+document.getElementById('cValue').addEventListener('input',e=>{state.cValue=+e.target.value||0;calcRender();});
+document.getElementById('cDays').addEventListener('input',e=>{state.days=+e.target.value||220;calcRender();});
+document.getElementById('cMargin').addEventListener('input',e=>{state.margin=+e.target.value||0;calcRender();});
+document.getElementById('cExpenses').addEventListener('input',e=>{state.expenses=+e.target.value||0;calcRender();});
+document.getElementById('cHousehold').addEventListener('change',e=>{state.household=e.target.checked;calcRender();});
+
+render();
+calcRender();
+</script>
+</body>
+</html>
