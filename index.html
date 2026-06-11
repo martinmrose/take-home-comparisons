@@ -61,6 +61,11 @@
   table.calc th{color:var(--muted);font-weight:600;font-size:11.5px;text-transform:uppercase;letter-spacing:.03em}
   table.calc .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:8px;vertical-align:middle}
   .calcNote{color:#c3cdd8;font-size:13.5px;margin-top:14px;line-height:1.55}
+  .optbox{background:var(--panel2);border:1px solid #2e4a36;border-left:3px solid var(--ltdOut);
+    border-radius:8px;padding:14px 16px;margin-top:16px}
+  .optbox-title{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--ltdOut);
+    font-weight:700;margin-bottom:10px}
+  .optbox-note{font-size:12px;color:var(--muted);margin-top:10px;line-height:1.5}
 </style>
 </head>
 <body>
@@ -86,21 +91,12 @@
         </div>
       </div>
       <div class="ctl">
-        <label>Household view</label>
-        <label class="switch"><input type="checkbox" id="household"><span class="track"></span>
-          <span style="font-size:13.5px;color:var(--ink)">Count 2nd director's £12,570</span></label>
-      </div>
-      <div class="ctl">
         <label>Billable days / yr</label>
         <input type="number" id="days" value="220" min="100" max="260" step="1">
       </div>
       <div class="ctl">
         <label>Umbrella margin £/wk</label>
         <input type="number" id="margin" value="25" min="0" max="100" step="1">
-      </div>
-      <div class="ctl">
-        <label>Ltd expenses £/yr</label>
-        <input type="number" id="expenses" value="5000" min="0" max="20000" step="500">
       </div>
       <div class="ctl">
         <label>Day-rate range shown (£/day)</label>
@@ -120,6 +116,27 @@
         </div>
         <div id="kRead" style="font-size:12.5px;color:var(--ltdOut);font-weight:600"></div>
       </div>
+    </div>
+
+    <div class="optbox">
+      <div class="optbox-title">Ltd company optimisations</div>
+      <div class="controls">
+        <div class="ctl">
+          <label>Second director salary</label>
+          <label class="switch"><input type="checkbox" id="household"><span class="track"></span>
+            <span style="font-size:13.5px;color:var(--ink)">Count £12,570 in household income</span></label>
+        </div>
+        <div class="ctl">
+          <label>Company-paid personal expenses £/yr</label>
+          <input type="number" id="expenses" value="5000" min="0" max="20000" step="500">
+        </div>
+      </div>
+      <p class="optbox-note">These are specific tax-planning choices, not standard Ltd company
+        assumptions. <b>Second director:</b> paying a spouse/partner £12,570 makes the company eligible
+        for the £10,500 Employment Allowance (wiping employer NI on both salaries) and splits income
+        into a second personal allowance. <b>Expenses:</b> costs the company meets on your behalf that
+        you would otherwise pay personally from net pay — e.g. phone, home office, professional
+        subscriptions.</p>
     </div>
   </div>
 
@@ -565,7 +582,7 @@ function render(){
     svg.appendChild(el('text',{x:px,y:M.t+PH+22,fill:'var(--muted)','font-size':12,'text-anchor':'middle'},fmtK(xv)));
   }
   svg.appendChild(el('text',{x:M.l+PW/2,y:H-14,fill:'var(--ink)','font-size':13,'text-anchor':'middle','font-weight':600},
-    'Gross salary £  (day-rate routes positioned at salary-equivalent = day rate × '+state.days+' × k)'));
+    'Gross salary equivalent (£)'));
   // top axis (day rate, shifted by k) — nice ticks across the selected range
   const drStep=niceStep(state.drMax-state.drMin,8);
   for(let dr=Math.ceil(state.drMin/drStep)*drStep; dr<=state.drMax+1; dr+=drStep){
