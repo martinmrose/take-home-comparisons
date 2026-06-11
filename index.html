@@ -122,9 +122,13 @@
       <div class="optbox-title">Ltd company optimisations</div>
       <div class="controls">
         <div class="ctl">
-          <label>Second director salary</label>
+          <label>Second director / employee salary £/yr</label>
+          <input type="number" id="second" value="12570" min="0" max="200000" step="500">
+        </div>
+        <div class="ctl">
+          <label>Treat as…</label>
           <label class="switch"><input type="checkbox" id="household"><span class="track"></span>
-            <span style="font-size:13.5px;color:var(--ink)">Count £12,570 in household income</span></label>
+            <span style="font-size:13.5px;color:var(--ink)">Include in household income</span></label>
         </div>
         <div class="ctl">
           <label>Company-paid personal expenses £/yr</label>
@@ -132,11 +136,15 @@
         </div>
       </div>
       <p class="optbox-note">These are operating setup choices that affect how the company is
-        structured and taxed — not standard assumptions for every Ltd company. <b>Second director:</b>
-        paying a spouse/partner £12,570 makes the company eligible for the £10,500 Employment
-        Allowance (wiping employer NI on both salaries) and makes use of a second personal allowance.
-        <b>Expenses:</b> costs the company meets on your behalf that you would otherwise pay personally
-        from net pay — e.g. phone, home office, professional subscriptions.</p>
+        structured and taxed — not standard assumptions for every Ltd company. <b>Second salary:</b>
+        paying a second director or employee is always a company cost (it reduces the profit available
+        as dividends). If they earn at least £5,000 the company qualifies for the £10,500 Employment
+        Allowance, which offsets employer NI on both salaries. Use the toggle to set who they are:
+        <b>include</b> a spouse/partner (their net pay is added to household take-home, using a second
+        personal allowance), or <b>exclude</b> an arm's-length employee (the cost still applies, but
+        their pay isn't your income). <b>Expenses:</b> costs the company meets on your behalf that you
+        would otherwise pay personally from net pay — e.g. phone, home office, professional
+        subscriptions.</p>
     </div>
   </div>
 
@@ -170,9 +178,13 @@
           <input type="number" id="cDays" value="220" min="100" max="260">
         </div>
         <div class="ctl">
-          <label>Household view</label>
+          <label>2nd director / employee salary £/yr</label>
+          <input type="number" id="cSecond" value="12570" min="0" max="200000" step="500">
+        </div>
+        <div class="ctl">
+          <label>Treat as…</label>
           <label class="switch"><input type="checkbox" id="cHousehold"><span class="track"></span>
-            <span style="font-size:13.5px;color:var(--ink)">Count 2nd director £12,570</span></label>
+            <span style="font-size:13.5px;color:var(--ink)">Include in household income</span></label>
         </div>
         <div class="ctl">
           <label>Umbrella margin £/wk</label>
@@ -224,14 +236,19 @@
       <h3>Ltd company — Outside IR35</h3>
       <ul>
         <li>You take a director's salary of <b>£12,570</b> (tax-free, no employee NI).</li>
-        <li>A <b>second director is paid £12,570</b> for admin work. This makes the company eligible for the
-            <b>Employment Allowance (£10,500)</b>, which fully covers the employer NI on both salaries — so employer NI = £0.</li>
-        <li><b>£5,000 of expenses</b> (editable) you would otherwise pay personally are met by the company. These are added
-            <i>directly</i> to your after-tax income (you neither pay tax on them nor fund them from net pay).</li>
+        <li>A <b>second salary</b> (default £12,570, editable) is paid to a second director or employee. This is always a
+            company cost that reduces the profit available as dividends. If they earn at least the <b>£5,000 secondary
+            threshold</b>, the company qualifies for the <b>Employment Allowance (£10,500)</b>, which offsets the employer NI
+            on both salaries. Set the second salary to £0 (or below £5,000) and the allowance no longer applies, so the
+            employer NI on your own salary becomes a real cost.</li>
+        <li><b>Company-paid expenses</b> (default £5,000, editable) you would otherwise pay personally are met by the company.
+            These are added <i>directly</i> to your after-tax income (you neither pay tax on them nor fund them from net pay).</li>
         <li>Remaining profit is taxed at <b>corporation tax</b> (19% up to £50k, 25% above £250k, marginal relief between)
             and the rest distributed to you as <b>dividends</b> (£500 allowance, then 8.75% / 33.75% / 39.35%).</li>
-        <li><b>Household view OFF (default):</b> only your personal net is plotted (salary + net dividends + expenses).
-            <b>ON:</b> adds the second director's £12,570 (the income-splitting case).</li>
+        <li><b>"Include in household income" OFF (default):</b> only your personal net is plotted (salary + net dividends +
+            expenses) — appropriate when the second salary goes to an arm's-length employee. <b>ON:</b> adds the second
+            person's <i>net</i> pay (the income-splitting case, e.g. a spouse). Above their personal allowance their pay is
+            taxed, so the addition is their take-home, not the gross salary.</li>
       </ul>
 
       <h3>Ltd company — Inside IR35</h3>
@@ -434,24 +451,28 @@ function netInsideIR35(contract){
 }
 
 // Outside IR35: full Ltd company flow.
-//   1. Company pays two directors at DIRECTOR_SALARY (= PA). Employment Allowance (£10,500)
-//      covers the employer NI on both — so erni nets to £0 at these salary levels.
-//   2. Company meets £expenses that the director would otherwise pay personally (e.g. phone,
-//      travel). These are added directly to take-home — no tax, no NI on them.
-//   3. Remaining profit is corporation-taxed; the after-tax profit is paid as dividends.
-//   4. Director pays personal income tax on salary + dividends (no NI on dividends).
-//   5. `household` ON: adds the second director's £12,570 salary. It falls entirely within
-//      their personal allowance, so it's completely tax-free — hence a straight £12,570 addition.
-function netOutsideIR35(contract, expenses, household){
-  const salaries=T.DIRECTOR_SALARY*2;
-  const erni=Math.max(0, employerNI(T.DIRECTOR_SALARY)*2 - T.EA); // EA fully covers this → 0
-  const profitBeforeCT=Math.max(0, contract - salaries - expenses - erni);
+//   1. You take a director's salary at DIRECTOR_SALARY (= PA, the income-tax/NI-efficient level).
+//   2. A second person (spouse/partner or employee) is paid `secondSalary`. This is ALWAYS a real
+//      company cost — it reduces profit available for dividends — regardless of whether they're in
+//      your household. If they earn ≥ the secondary threshold (£5,000) the company qualifies for the
+//      Employment Allowance (£10,500), which offsets employer NI on both salaries.
+//   3. Company meets £expenses that you would otherwise pay personally (e.g. phone, home office).
+//      These are added directly to take-home — no tax, no NI on them.
+//   4. Remaining profit is corporation-taxed; the after-tax profit is paid to you as dividends.
+//   5. You pay personal income tax on your salary + dividends (no NI on dividends).
+//   6. `includeSecond` ON (spouse/partner): adds the second person's NET salary to household take-home.
+//      OFF (arm's-length employee): the salary is still paid as a cost but not counted as your income.
+function netOutsideIR35(contract, expenses, secondSalary, includeSecond){
+  const ownSalary=T.DIRECTOR_SALARY;
+  const eaAvailable = secondSalary >= T.ER_ST; // EA needs a second employee above the secondary threshold
+  const totalErNI = employerNI(ownSalary) + employerNI(secondSalary);
+  const erni=Math.max(0, totalErNI - (eaAvailable ? T.EA : 0));
+  const profitBeforeCT=Math.max(0, contract - ownSalary - secondSalary - expenses - erni);
   const ct=corpTax(profitBeforeCT);
   const dividends=Math.max(0, profitBeforeCT - ct);
-  const salary=T.DIRECTOR_SALARY;
-  const tax=personalIncomeTax(salary,dividends);
-  let net = salary + dividends - tax - employeeNI(salary) + expenses;
-  if(household) net += T.DIRECTOR_SALARY;
+  const tax=personalIncomeTax(ownSalary,dividends);
+  let net = ownSalary + dividends - tax - employeeNI(ownSalary) + expenses;
+  if(includeSecond) net += netPermanent(secondSalary); // their take-home (tax-free up to PA, taxed above)
   return net;
 }
 
@@ -466,8 +487,10 @@ function getCol(v){return getComputedStyle(document.documentElement).getProperty
 
 //// ---------- state ----------
 const state={ir35:'outside', household:false, days:220, margin:25, expenses:5000,
+             second:12570,                       // second director/employee salary (£/yr)
              k:1.18, autoFit:true, hidden:{}, cBasis:'day', cValue:500,
              drMin:200, drMax:1000};            // selected day-rate range (£/day)
+// state.household = "include the second salary in household take-home" (spouse) vs exclude (employee)
 // x-axis is GROSS SALARY £ (the master scale). The visible window is the salary-equivalent
 // of the selected day-rate range: [drMin·days·k , drMax·days·k]. Contracting routes plot at
 // salary-equivalent position = contractValue * k (structural multiplier).
@@ -492,7 +515,7 @@ function posValue(key, pos){
   if(c < state.drMin*state.days-1 || c > state.drMax*state.days+1) return null;
   if(key==='umbrella') return netUmbrella(c, state.margin, state.days)/12;
   if(key==='ltdIn')    return netInsideIR35(c)/12;
-  if(key==='ltdOut')   return netOutsideIR35(c, state.expenses, state.household)/12;
+  if(key==='ltdOut')   return netOutsideIR35(c, state.expenses, state.second, state.household)/12;
   return null;
 }
 function buildData(key){
@@ -516,7 +539,7 @@ function fitK(){
   for(let k=0.80; k<=1.30; k+=0.005){
     let sse=0;
     for(let c=cLo; c<=cHi; c+=step){
-      const diff = netOutsideIR35(c, state.expenses, state.household) - netPermanent(c*k);
+      const diff = netOutsideIR35(c, state.expenses, state.second, state.household) - netPermanent(c*k);
       sse += diff*diff;
     }
     if(sse<bestErr){bestErr=sse; best=k;}
@@ -674,6 +697,7 @@ document.getElementById('household').addEventListener('change',e=>{state.househo
 document.getElementById('days').addEventListener('input',e=>{state.days=+e.target.value||220;render();});
 document.getElementById('margin').addEventListener('input',e=>{state.margin=+e.target.value||0;render();});
 document.getElementById('expenses').addEventListener('input',e=>{state.expenses=+e.target.value||0;render();});
+document.getElementById('second').addEventListener('input',e=>{state.second=+e.target.value||0;render();});
 document.getElementById('drMin').addEventListener('change',e=>{state.drMin=+e.target.value||20;render();});
 document.getElementById('drMax').addEventListener('change',e=>{state.drMax=+e.target.value||1000;render();});
 document.getElementById('autofit').addEventListener('change',e=>{state.autoFit=e.target.checked;render();});
@@ -693,7 +717,7 @@ function fmt0(n){return Math.round(n).toLocaleString('en-GB');}
 function routeNet(route,c){
   if(route==='umbrella') return netUmbrella(c,state.margin,state.days);
   if(route==='ltdIn')    return netInsideIR35(c);
-  if(route==='ltdOut')   return netOutsideIR35(c,state.expenses,state.household);
+  if(route==='ltdOut')   return netOutsideIR35(c,state.expenses,state.second,state.household);
   return 0;
 }
 
@@ -755,12 +779,14 @@ function syncCalcInputs(){
   document.getElementById('cDays').value=state.days;
   document.getElementById('cMargin').value=state.margin;
   document.getElementById('cExpenses').value=state.expenses;
+  document.getElementById('cSecond').value=state.second;
   document.getElementById('cHousehold').checked=state.household;
 }
 function syncChartInputs(){
   document.getElementById('days').value=state.days;
   document.getElementById('margin').value=state.margin;
   document.getElementById('expenses').value=state.expenses;
+  document.getElementById('second').value=state.second;
   document.getElementById('household').checked=state.household;
 }
 // tab switching
@@ -794,6 +820,7 @@ document.getElementById('cValue').addEventListener('input',e=>{state.cValue=+e.t
 document.getElementById('cDays').addEventListener('input',e=>{state.days=+e.target.value||220;calcRender();});
 document.getElementById('cMargin').addEventListener('input',e=>{state.margin=+e.target.value||0;calcRender();});
 document.getElementById('cExpenses').addEventListener('input',e=>{state.expenses=+e.target.value||0;calcRender();});
+document.getElementById('cSecond').addEventListener('input',e=>{state.second=+e.target.value||0;calcRender();});
 document.getElementById('cHousehold').addEventListener('change',e=>{state.household=e.target.checked;calcRender();});
 
 render();
