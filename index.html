@@ -54,11 +54,11 @@
   table.rates td,table.rates th{border:1px solid #2c3744;padding:5px 10px;text-align:left}
   .warn{color:#ffb454}
   .foot{color:var(--muted);font-size:12.5px;margin-top:26px;line-height:1.6}
-  /* header row: title block left, tabs right */
-  .header{display:flex;justify-content:space-between;align-items:center;gap:24px;flex-wrap:wrap;margin-bottom:20px}
-  .header-text{flex:1 1 320px;min-width:0}
-  .header-text h1{margin:0 0 5px}
-  .header-text .sub{margin:0}
+  /* header: full-width heading, then subtitle (left) + tabs (right) on a second row */
+  .header{margin-bottom:20px}
+  .header h1{margin:0 0 9px}
+  .header-row2{display:flex;justify-content:space-between;align-items:center;gap:24px;flex-wrap:wrap}
+  .header-row2 .sub{margin:0;flex:1 1 340px}
   .tabs{margin-bottom:0;flex:0 0 auto}
   /* two-column controls */
   .panel-grid{display:grid;grid-template-columns:1.12fr .88fr;gap:16px;margin-bottom:18px}
@@ -90,21 +90,20 @@
 <body>
 <div class="wrap">
   <div class="header">
-    <div class="header-text">
-      <h1>UK Monthly Take-Home Pay — by income level &amp; working arrangement</h1>
+    <h1>Take-home pay comparison: Contractor vs Employee</h1>
+    <div class="header-row2">
       <p class="sub">Tax year 2025/26 (England/Wales/NI rates). Compare a day-rate contract via your own Ltd company,
          via an umbrella, and a permanent PAYE salary. All figures are <b>net monthly</b> take-home.</p>
-    </div>
-    <div class="seg tabs" id="tabs">
-      <button data-t="chart" class="active">📈 Chart</button>
-      <button data-t="calc">🧮 Calculator</button>
+      <div class="seg tabs" id="tabs">
+        <button data-t="chart" class="active">📈 Chart</button>
+        <button data-t="calc">🧮 Calculator</button>
+      </div>
     </div>
   </div>
 
   <div id="tab-chart">
   <div class="panel-grid">
     <div class="panel">
-      <div class="panel-title">Chart parameters</div>
       <div class="controls tight">
       <div class="ctl">
         <label>Ltd company — IR35 status</label>
@@ -147,13 +146,13 @@
       <div class="panel-title">Ltd company optimisations</div>
       <div class="controls tight">
         <div class="ctl">
-          <label>2nd director / employee salary £/yr</label>
+          <label>2nd salary</label>
           <input type="number" id="second" value="12570" min="0" max="200000" step="500">
         </div>
         <div class="ctl">
-          <label>Treat as…</label>
+          <label>Include in Household income</label>
           <label class="switch"><input type="checkbox" id="household"><span class="track"></span>
-            <span style="font-size:13.5px;color:var(--ink)">Include in household income</span></label>
+            <span id="hhText" style="font-size:13.5px;color:var(--ink)">Treat as employee</span></label>
         </div>
         <div class="ctl">
           <label>Company-paid personal expenses £/yr</label>
@@ -206,13 +205,13 @@
           <input type="number" id="cDays" value="220" min="100" max="260">
         </div>
         <div class="ctl">
-          <label>2nd director / employee salary £/yr</label>
+          <label>2nd salary</label>
           <input type="number" id="cSecond" value="12570" min="0" max="200000" step="500">
         </div>
         <div class="ctl">
-          <label>Treat as…</label>
+          <label>Include in Household income</label>
           <label class="switch"><input type="checkbox" id="cHousehold"><span class="track"></span>
-            <span style="font-size:13.5px;color:var(--ink)">Include in household income</span></label>
+            <span id="cHhText" style="font-size:13.5px;color:var(--ink)">Treat as employee</span></label>
         </div>
         <div class="ctl">
           <label>Umbrella margin £/wk</label>
@@ -721,7 +720,13 @@ document.getElementById('ir35').addEventListener('click',e=>{
   [...e.currentTarget.children].forEach(b=>b.classList.remove('active'));
   e.target.classList.add('active'); state.ir35=e.target.dataset.v; render();
 });
-document.getElementById('household').addEventListener('change',e=>{state.household=e.target.checked;render();});
+// dynamic toggle text: "Treat as spouse" when including the 2nd salary in household income, else "Treat as employee"
+function setHhText(){
+  const t = state.household ? 'Treat as spouse' : 'Treat as employee';
+  const a=document.getElementById('hhText'), b=document.getElementById('cHhText');
+  if(a) a.textContent=t; if(b) b.textContent=t;
+}
+document.getElementById('household').addEventListener('change',e=>{state.household=e.target.checked;setHhText();render();});
 document.getElementById('days').addEventListener('input',e=>{state.days=+e.target.value||220;render();});
 document.getElementById('margin').addEventListener('input',e=>{state.margin=+e.target.value||0;render();});
 document.getElementById('expenses').addEventListener('input',e=>{state.expenses=+e.target.value||0;render();});
@@ -849,8 +854,9 @@ document.getElementById('cDays').addEventListener('input',e=>{state.days=+e.targ
 document.getElementById('cMargin').addEventListener('input',e=>{state.margin=+e.target.value||0;calcRender();});
 document.getElementById('cExpenses').addEventListener('input',e=>{state.expenses=+e.target.value||0;calcRender();});
 document.getElementById('cSecond').addEventListener('input',e=>{state.second=+e.target.value||0;calcRender();});
-document.getElementById('cHousehold').addEventListener('change',e=>{state.household=e.target.checked;calcRender();});
+document.getElementById('cHousehold').addEventListener('change',e=>{state.household=e.target.checked;setHhText();calcRender();});
 
+setHhText();
 render();
 calcRender();
 </script>
