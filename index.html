@@ -54,7 +54,26 @@
   table.rates td,table.rates th{border:1px solid #2c3744;padding:5px 10px;text-align:left}
   .warn{color:#ffb454}
   .foot{color:var(--muted);font-size:12.5px;margin-top:26px;line-height:1.6}
-  .tabs{margin-bottom:18px}
+  /* header row: title block left, tabs right */
+  .header{display:flex;justify-content:space-between;align-items:center;gap:24px;flex-wrap:wrap;margin-bottom:20px}
+  .header-text{flex:1 1 320px;min-width:0}
+  .header-text h1{margin:0 0 5px}
+  .header-text .sub{margin:0}
+  .tabs{margin-bottom:0;flex:0 0 auto}
+  /* two-column controls */
+  .panel-grid{display:grid;grid-template-columns:1.12fr .88fr;gap:16px;margin-bottom:18px}
+  @media(max-width:720px){.panel-grid{grid-template-columns:1fr}}
+  .panel{background:var(--panel);border:1px solid #283341;border-radius:12px;padding:15px 18px}
+  .panel.opt{background:var(--panel2);border-color:#2e4a36;border-left:3px solid var(--ltdOut)}
+  .panel-title{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);
+    font-weight:700;margin-bottom:14px}
+  .panel.opt .panel-title{color:var(--ltdOut)}
+  .controls.tight{gap:14px 22px}
+  .opt-exp{margin-top:14px}
+  .opt-exp summary{font-size:12px;color:var(--ltdOut);cursor:pointer;font-weight:600;list-style:none;display:inline-flex;align-items:center;gap:5px}
+  .opt-exp summary::-webkit-details-marker{display:none}
+  .opt-exp summary::before{content:"ⓘ";font-size:13px}
+  .opt-exp[open] summary::before{content:"▾"}
   .calcHead{font-size:15.5px;font-weight:600;margin-bottom:12px}
   table.calc{width:100%;font-size:13.5px;border-collapse:collapse}
   table.calc td,table.calc th{border:1px solid #2c3744;padding:9px 13px;text-align:left}
@@ -70,18 +89,23 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>UK Monthly Take-Home Pay — by income level &amp; working arrangement</h1>
-  <p class="sub">Tax year 2025/26 (England/Wales/NI rates). Compare a day-rate contract via your own Ltd company,
-     via an umbrella, and a permanent PAYE salary. All figures are <b>net monthly</b> take-home.</p>
-
-  <div class="seg tabs" id="tabs">
-    <button data-t="chart" class="active">📈 Chart</button>
-    <button data-t="calc">🧮 Equivalence calculator</button>
+  <div class="header">
+    <div class="header-text">
+      <h1>UK Monthly Take-Home Pay — by income level &amp; working arrangement</h1>
+      <p class="sub">Tax year 2025/26 (England/Wales/NI rates). Compare a day-rate contract via your own Ltd company,
+         via an umbrella, and a permanent PAYE salary. All figures are <b>net monthly</b> take-home.</p>
+    </div>
+    <div class="seg tabs" id="tabs">
+      <button data-t="chart" class="active">📈 Chart</button>
+      <button data-t="calc">🧮 Calculator</button>
+    </div>
   </div>
 
   <div id="tab-chart">
-  <div class="card">
-    <div class="controls">
+  <div class="panel-grid">
+    <div class="panel">
+      <div class="panel-title">Chart parameters</div>
+      <div class="controls tight">
       <div class="ctl">
         <label>Ltd company — IR35 status</label>
         <div class="seg" id="ir35">
@@ -116,13 +140,14 @@
         </div>
         <div id="kRead" style="font-size:12.5px;color:var(--ltdOut);font-weight:600"></div>
       </div>
+      </div>
     </div>
 
-    <div class="optbox">
-      <div class="optbox-title">Ltd company optimisations</div>
-      <div class="controls">
+    <div class="panel opt">
+      <div class="panel-title">Ltd company optimisations</div>
+      <div class="controls tight">
         <div class="ctl">
-          <label>Second director / employee salary £/yr</label>
+          <label>2nd director / employee salary £/yr</label>
           <input type="number" id="second" value="12570" min="0" max="200000" step="500">
         </div>
         <div class="ctl">
@@ -135,16 +160,19 @@
           <input type="number" id="expenses" value="5000" min="0" max="20000" step="500">
         </div>
       </div>
-      <p class="optbox-note">These are operating setup choices that affect how the company is
-        structured and taxed — not standard assumptions for every Ltd company. <b>Second salary:</b>
-        paying a second director or employee is always a company cost (it reduces the profit available
-        as dividends). If they earn at least £5,000 the company qualifies for the £10,500 Employment
-        Allowance, which offsets employer NI on both salaries. Use the toggle to set who they are:
-        <b>include</b> a spouse/partner (their net pay is added to household take-home, using a second
-        personal allowance), or <b>exclude</b> an arm's-length employee (the cost still applies, but
-        their pay isn't your income). <b>Expenses:</b> costs the company meets on your behalf that you
-        would otherwise pay personally from net pay — e.g. phone, home office, professional
-        subscriptions.</p>
+      <details class="opt-exp">
+        <summary>What are these?</summary>
+        <p class="optbox-note">These are operating setup choices that affect how the company is
+          structured and taxed — not standard assumptions for every Ltd company. <b>Second salary:</b>
+          paying a second director or employee is always a company cost (it reduces the profit available
+          as dividends). If they earn at least £5,000 the company qualifies for the £10,500 Employment
+          Allowance, which offsets employer NI on both salaries. Use the toggle to set who they are:
+          <b>include</b> a spouse/partner (their net pay is added to household take-home, using a second
+          personal allowance), or <b>exclude</b> an arm's-length employee (the cost still applies, but
+          their pay isn't your income). <b>Expenses:</b> costs the company meets on your behalf that you
+          would otherwise pay personally from net pay — e.g. phone, home office, professional
+          subscriptions.</p>
+      </details>
     </div>
   </div>
 
